@@ -1,23 +1,33 @@
 import os
 import re
 import sqlite3
+import time
 
 srcDir = './srcDir'
 dstDir = './dstDir'
 
-start_time = 1588280400
-end_time = 1588366800
+def datetime_timestamp(dt):
+    #dt为字符串
+    #中间过程，一般都需要将字符串转化为时间数组
+    time.strptime(dt, '%Y-%m-%d %H:%M:%S')
+    ## time.struct_time(tm_year=2012, tm_mon=3, tm_mday=28, tm_hour=6, tm_min=53, tm_sec=40, tm_wday=2, tm_yday=88, tm_isdst=-1)
+    #将"2012-03-28 06:53:40"转化为时间戳
+    s = time.mktime(time.strptime(dt, '%Y-%m-%d %H:%M:%S'))
+    return int(s)
+
+start_time = datetime_timestamp('2020-05-01 05:00:00')  #运行程序的当地时间
+end_time = datetime_timestamp('2020-05-02 05:00:00')  #运行程序的当地时间
 EOB_month = 5
 
-path = 'G:\\沙特现场问题\\'   #日志路径
-dir_name = '台区1-集中器日志-SXE2030180003813-0502'
+path = 'G:\\沙特现场问题\\'  # 日志父路径
+dir_name = '台区1-集中器日志-SXE2030180003813-0502' #日志文件夹名
 path += dir_name+'\\'
 # path = os.getcwd()
 log_name = 'all.log'  # 日志合并文件文件名
-profile_name = dir_name+'.csv' #数据库导出文件名
-srwf_name = dir_name+'.log'   #3762报文文件名
+profile_name = dir_name+'.csv'  # 数据库导出文件名
+srwf_name = dir_name+'.log'  # 3762报文文件名
 
-## 第一部分：日志处理
+# 第一部分：日志处理
 filelist = os.listdir(path)
 
 filesum = 0  # message总数
@@ -102,12 +112,12 @@ srwf_info.close()
 print('3762log processing success')
 print('--------------------------------')
 
-## 第二部分：数据库处理
+# 第二部分：数据库处理
 
 conn = sqlite3.connect(path+'dc.db')
 print('open dc.db successfully')
 sql_c = conn.cursor()
-sql_command ='''
+sql_command = '''
     	SELECT
 		id,
 		serial_no,
@@ -123,7 +133,8 @@ sql_command ='''
 		LEFT OUTER JOIN ( SELECT count( 1 ) AS num, meter_id FROM data_LoadProfile_sd WHERE data_time >= {0} AND data_time <= {1} GROUP BY meter_id ) AS LoadProfile ON LoadProfile.meter_id = meter.id 
 	WHERE
 status = 1;
-'''.format(start_time,end_time) #格式化sql语句
+'''.format(start_time, end_time)  # 格式化sql语句
+
 cursor = sql_c.execute(
     sql_command
 )
@@ -135,8 +146,8 @@ AverageDataProfile_sum = 0
 EnergyProfile_sum = 0
 EOBProfile_sum = 0
 LoadProfile_sum = 0
-total_id = 0    #表的总数量
-success_count = 0   #有数据的表的数量
+total_id = 0  # 表的总数量
+success_count = 0  # 有数据的表的数量
 
 for row in cursor:
     total_id += 1
@@ -157,3 +168,4 @@ conn.close()
 
 print('--------------------------------')
 print('all done')
+

@@ -3,8 +3,8 @@ import re
 import sqlite3
 import time
 
-srcDir = './srcDir'
-dstDir = './dstDir'
+# srcDir = './srcDir'
+# dstDir = './dstDir'
 
 def datetime_timestamp(dt):
     #dt为字符串

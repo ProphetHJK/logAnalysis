@@ -19,16 +19,20 @@ def datetime_timestamp(dt):
 start_time = datetime_timestamp('2020-05-05 05:00:00')  #运行程序的当地时间
 end_time = datetime_timestamp('2020-05-06 05:00:00')  #运行程序的当地时间
 start_EOB_time = datetime_timestamp('2020-05-01 05:00:00')
-end_EOB_time = datetime_timestamp('2020-05-03 05:00:00')
+end_EOB_time = datetime_timestamp('2020-05-31 05:00:00')
 EOB_month = 5
 
-path = 'G:\\沙特现场问题\\'  # 日志父路径
-dir_name = '台区1-集中器日志-SXE2030180003779-0502' #日志文件夹名
+path = r'C:\Users\hjk\Documents\1\0506'  # 日志父路径
+dir_name = '台区5-集中器日志-SXE2030180003823-0506' #日志文件夹名
+out_dir = path + '\\output\\'
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
 auto_search = 0  #自动查找path路径下日志文件夹
-change_name = 0  #改名
-log_analy = 0    #日志分析(需先改名)
+change_name = 1  #改名
+log_analy = 1    #日志分析(需先改名)
 db_analy = 1     #数据库分析
-path += dir_name+'\\'
+path += '\\'+dir_name+'\\'
 # path = os.getcwd()
 log_name = 'all.log'  # 日志合并文件文件名
 profile_name = dir_name+'_'+str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
@@ -113,7 +117,7 @@ if log_analy == True:
     result2 = re.sub(r'(.*SRWF -> 3_47,RX).*\n(.*\n)', change, srwf_info.read())
     srwf_info.close()
 
-    srwf_info = open(path+srwf_name, 'w', newline='\n', encoding='UTF-8')
+    srwf_info = open(out_dir+srwf_name, 'w', newline='\n', encoding='UTF-8')
     srwf_info.write(result2)
     srwf_info.close()
 
@@ -146,7 +150,7 @@ if db_analy == True:
     cursor = sql_c.execute(
         sql_command
     )
-    sql_file = open(path+profile_name, 'w')
+    sql_file = open(out_dir+profile_name, 'w')
     sql_file.write(
         'id,serial_no,AverageDataProfile,EnergyProfile,EOBProfile,LoadProfile\n')
 

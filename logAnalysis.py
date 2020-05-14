@@ -20,6 +20,12 @@ start_time = datetime_timestamp('2020-05-13 05:00:00')  #运行程序的当地�
 end_time = datetime_timestamp('2020-05-14 05:00:00')  #运行程序的当地时间
 start_EOB_time = datetime_timestamp('2020-05-01 05:00:00')
 end_EOB_time = datetime_timestamp('2020-05-14 05:00:00')
+log_start_time = 'May 13 18:00:00'  #日志开始分析时间
+log_end_time = 'May 13 19:00:00'   #日志结束分析时间
+if log_end_time > log_start_time:
+    print('ok')
+else:
+    print('error')
 time_type = 'data_time'
 EOB_month = 5
 
@@ -32,8 +38,11 @@ if not os.path.exists(out_dir):
 
 auto_search = 0  #自动查找path路径下日志文件夹
 change_name = 1  #改名合并(已经能自动判断)
-log_analy = 1    #日志分析(需先改名合并)
-once_analy = 1   #一次抄表成功率分析(需先改名合并)
+# TODO:强制合并
+force_merge = 1  #强制合并 
+log_date_range = 1  #启用日志范围(暂不支持跨月)
+log_analy = 0    #日志分析(需先改名合并)
+once_analy = 0   #一次抄表成功率分析(需先改名合并)
 db_analy = 0     #数据库分析
 old_version = 0  #1.7.2日志
 path += '\\'+dir_name+'\\'
@@ -94,23 +103,47 @@ if change_name == True:
                     # print(path+i,'-->',path+messagename)
                     os.rename(path+i, path+messagename)
                     filesum -= 1
-        ## 合并文件
-        # 新建合并文件，二进制写入，行尾符不会自动识别系统，或者newline='\n'
-        all_log = open(path+log_name, 'wb')
-        # 更新列表
-        filelist = os.listdir(path)
-        # 合并文件
-        for i in filelist:
-            # 判断是否为日志文件
-            isMessage = re.match(r'messages.{0,2}', i)
-            if isMessage:
-                x = open(path+i, 'rb')
-                all_log.write(x.read())
-                x.close()
-        all_log.close()
-
         print('change name success')
+    
+    ## 合并文件
+    # 新建合并文件，二进制写入，行尾符不会自动识别系统，或者newline='\n'
+    all_log = open(path+log_name, 'wb')
+    # 更新列表
+    filelist = os.listdir(path)
+    # 合并文件
+    for i in filelist:
+        # 判断是否为日志文件
+        isMessage = re.match(r'messages.{0,2}', i)
+        if isMessage:
+            x = open(path+i, 'rb')
+            all_log.write(x.read())
+            x.close()
+    all_log.close()
+
+    print('merge file success')
+    print('--------------------------------')
+
+## 日志时间范围
+if log_date_range == True:
+    if not os.path.isfile(os.path.join(path,log_name)):
+        print('{0} not exist, please change name first'.format(log_name))
         print('--------------------------------')
+    else:
+        # 正则表达式
+        pattern_line = r'((.*) DC: .*)'
+        # 转化为对象
+        pattern = re.compile(pattern_line)
+        all_log = open(path+log_name, 'r', encoding='UTF-8')
+        result1 = pattern.findall(all_log.read())
+        all_log.close()
+        srwf_info = open(path+log_name, 'w', newline='\n', encoding='UTF-8')
+        # 匹配的所有内容输出到文件
+        for i in result1:
+            if i[1] > log_start_time and i[1] < log_end_time:
+                srwf_info.write(i[0])  # 第一个捕获组，最外面的括号
+                srwf_info.write('\n')
+
+        srwf_info.close()
 
 ## 日志分析功能
 if log_analy == True:

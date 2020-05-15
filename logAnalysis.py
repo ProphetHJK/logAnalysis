@@ -12,6 +12,12 @@ def datetime_timestamp(dt):
     s = time.mktime(time.strptime(dt, '%Y-%m-%d %H:%M:%S'))
     return int(s)
 
+def timestamp_datetime(value):
+    format = '%Y-%m-%d %H:%M:%S'
+    value = time.localtime(value)
+    dt = time.strftime(format, value)
+    return dt
+
 
 config = configparser.ConfigParser()
 os.chdir(sys.path[0])
@@ -81,6 +87,7 @@ log_name = 'all.log'  # 日志合并文件文件名
 profile_name = dir_name+'_'+time_type+'_' + \
     str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
 srwf_name = dir_name+'_3762.log'   # 3762报文文件名
+EOB_name = dir_name+'_EOB_'+str(start_EOB_time)+'_'+str(end_EOB_time)+'.csv'
 
 print('START ANALYSIS:')
 print
@@ -312,9 +319,47 @@ if db_analy == True:
     sql_file.write(str(total_id)+','+str(success_count)+','+str(AverageDataProfile_sum)+','+str(EnergyProfile_sum) +
                    ','+str(EOBProfile_sum)+','+str(LoadProfile_sum)+'\n')
     sql_file.close()
-    print('export csv successfully')
+    print('export profile csv successfully')
     print('--------------------------------')
     conn.close()
+# EOB 分析
+if db_analy == True:
+    conn = sqlite3.connect(os.path.join(path, 'dc.db'))
+    print('open dc.db successfully')
+    sql_c = conn.cursor()
+    sql_command = '''
+        SELECT
+            meter.id,
+            serial_no,
+            data_time,
+            save_time 
+        FROM
+            meter,
+            data_EOB_DataProfile_sd 
+        WHERE
+            data_EOB_DataProfile_sd.meter_id = meter.id 
+            AND save_time > {0} 
+            AND save_time < {1} 
+        ORDER BY
+            save_time;
+    '''.format(start_EOB_time, end_EOB_time)  # 格式化sql语句
+    # print(sql_command)
+    cursor = sql_c.execute(sql_command)
+    sql_file = open(os.path.join(out_dir, EOB_name), 'w')
+    sql_file.write(
+        'id,serial_no,data_time,save_time\n')
 
+    total_id = 0  # 表的总数量
+
+    for row in cursor:
+        total_id += 1
+
+        sql_file.write(str(row[0])+','+str(row[1])+','+timestamp_datetime(row[2]) +
+                       ','+timestamp_datetime(row[3])+'\n')
+
+    sql_file.close()
+    print('export EOB csv successfully')
+    print('--------------------------------')
+    conn.close()
 
 print('ALL DONE')

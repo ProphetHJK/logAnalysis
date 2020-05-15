@@ -248,7 +248,7 @@ if once_analy == True:
         result1 = pattern.findall(all_log.read())
         current_count = len(result1)
 
-        pattern_line = r'03032020010313010000000000|03032020010313010000000002'
+        pattern_line = r'13010000000000|13010000000002'
         # 转化为对象
         pattern = re.compile(pattern_line)
         all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
@@ -282,7 +282,7 @@ if db_analy == True:
         WHERE
     status = 1;
     '''.format(start_time, end_time, start_EOB_time, end_EOB_time, time_type)  # 格式化sql语句
-    print(sql_command)
+    # print(sql_command)
     cursor = sql_c.execute(
         sql_command
     )

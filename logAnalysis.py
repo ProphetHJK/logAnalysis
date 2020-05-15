@@ -36,8 +36,9 @@ time_type = config['db']['time_type']  # 数据库导出时间
 path = config['config']['path']  # 日志父路径
 dir_name = os.path.split(path)[1]  # 日志文件夹名
 # out_dir = path+ '\\output\\'
-out_dir = os.path.join(path, 'output')
-
+out_dir = config['config']['out_dir']
+if out_dir == '':
+    out_dir = os.path.join(path, 'output')
 
 auto_search = config.getint('config', 'auto_search')     # 自动查找path路径下日志文件夹
 change_name = config.getint('config', 'change_name')      # 改名合并(已经能自动判断)
@@ -235,8 +236,8 @@ if log_analy == True:
 
 # 一次抄表成功率分析
 if once_analy == True:
-    if not os.path.isfile(os.path.join(path, log_name)):
-        print('{0} not exist, please change name first'.format(log_name))
+    if not os.path.isfile(os.path.join(out_dir, srwf_name)):
+        print('{0} not exist, please change name first'.format(srwf_name))
         print('--------------------------------')
     else:
         # 统计一次抄表成功率
@@ -244,15 +245,15 @@ if once_analy == True:
         pattern_line = r'AFN : 13, FN : 1'
         # 转化为对象
         pattern = re.compile(pattern_line)
-        all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
-        result1 = pattern.findall(all_log.read())
+        srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8')
+        result1 = pattern.findall(srwf_info.read())
         current_count = len(result1)
 
         pattern_line = r'13010000000000|13010000000002'
         # 转化为对象
         pattern = re.compile(pattern_line)
-        all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
-        result1 = pattern.findall(all_log.read())
+        srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8')
+        result1 = pattern.findall(srwf_info.read())
         wrong_count = len(result1)
         print("wrong_count:{0}".format(wrong_count))
         print("total_count:{0}".format(current_count))

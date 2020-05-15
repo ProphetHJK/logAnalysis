@@ -1,66 +1,105 @@
 # -*- coding:utf-8 -*-
 import os
+import sys
 import re
 import sqlite3
 import time
+import configparser
 
-# srcDir = './srcDir'
-# dstDir = './dstDir'
 
 def datetime_timestamp(dt):
-    #dt为字符串
-    #中间过程，一般都需要将字符串转化为时间数组
     time.strptime(dt, '%Y-%m-%d %H:%M:%S')
-    ## time.struct_time(tm_year=2012, tm_mon=3, tm_mday=28, tm_hour=6, tm_min=53, tm_sec=40, tm_wday=2, tm_yday=88, tm_isdst=-1)
-    #将"2012-03-28 06:53:40"转化为时间戳
     s = time.mktime(time.strptime(dt, '%Y-%m-%d %H:%M:%S'))
     return int(s)
 
-start_time = datetime_timestamp('2020-05-13 05:00:00')  #运行程序的当地时间
-end_time = datetime_timestamp('2020-05-14 05:00:00')  #运行程序的当地时间
-start_EOB_time = datetime_timestamp('2020-05-01 05:00:00')
-end_EOB_time = datetime_timestamp('2020-05-14 05:00:00')
-log_start_time = 'May 13 18:00:00'  #日志开始分析时间
-log_end_time = 'May 13 19:00:00'   #日志结束分析时间
-if log_end_time > log_start_time:
-    print('ok')
-else:
-    print('error')
-time_type = 'data_time'
-EOB_month = 5
 
-path = r'G:\沙特现场问题'  # 日志父路径
-dir_name = '台区5-集中器日志-SXE2030180003822-0513-升级前' #日志文件夹名
+config = configparser.ConfigParser()
+os.chdir(sys.path[0])
+config_file = os.path.abspath(os.path.join(os.getcwd(), 'config.ini'))
+config.read(config_file, encoding='UTF-8')
+
+start_time = datetime_timestamp(
+    config['db']['start_time'])      # 数据库分析开始时间，运行程序的当地时间
+end_time = datetime_timestamp(
+    config['db']['end_time'])        # 数据库分析结束时间，运行程序的当地时间
+start_EOB_time = datetime_timestamp(
+    config['db']['start_EOB_time'])  # 数据库分析开始时间，运行程序的当地时间
+end_EOB_time = datetime_timestamp(
+    config['db']['end_EOB_time'])    # 数据库分析开始时间，运行程序的当地时间
+# 日志开始分析时间
+log_start_time = config['log']['log_start_time']
+# 日志结束分析时间
+log_end_time = config['log']['log_end_time']
+
+time_type = config['db']['time_type']  # 数据库导出时间
+
+path = config['config']['path']  # 日志父路径
+dir_name = os.path.split(path)[1]  # 日志文件夹名
 # out_dir = path+ '\\output\\'
-out_dir = os.path.join(path, dir_name)+ '\\output\\'
+out_dir = os.path.join(path, 'output')
+
+
+auto_search = config.getint('config', 'auto_search')     # 自动查找path路径下日志文件夹
+change_name = config.getint('config', 'change_name')      # 改名合并(已经能自动判断)
+force_merge = config.getint(
+    'config', 'force_merge')     # 强制合并,不判断文件是否存在(需开启改名)
+log_date_range = config.getint('config', 'log_date_range')  # 启用日志范围(暂不支持跨月)
+log_analy = config.getint('config', 'log_analy')        # 日志分析(需先改名合并)
+once_analy = config.getint('config', 'once_analy')      # 一次抄表成功率分析(需先改名合并)
+db_analy = config.getint('config', 'db_analy')        # 数据库分析
+EOB_analy = config.getint('config', 'EOB_analy')       # EOB分析()
+# True: 1.7.2日志 , False: 1.7.2之后版本日志
+old_version = config.getint('config', 'old_version')
+
+# start_time = datetime_timestamp('2020-05-13 05:00:00')      # 数据库分析开始时间，运行程序的当地时间
+# end_time = datetime_timestamp('2020-05-14 05:00:00')        # 数据库分析结束时间，运行程序的当地时间
+# start_EOB_time = datetime_timestamp('2020-05-01 05:00:00')  # 数据库分析开始时间，运行程序的当地时间
+# end_EOB_time = datetime_timestamp('2020-05-14 05:00:00')    # 数据库分析开始时间，运行程序的当地时间
+# log_start_time = 'May 13 18:00:00'                          # 日志开始分析时间
+# log_end_time = 'May 13 19:00:00'                            # 日志结束分析时间
+
+# time_type = 'data_time'  # 数据库导出时间
+
+# path = r'G:\沙特现场问题'  # 日志父路径
+# dir_name = '台区5-集中器日志-SXE2030180003822-0513-升级前'  # 日志文件夹名
+# # out_dir = path+ '\\output\\'
+# out_dir = os.path.join(path, dir_name) + '\\output\\'
+
+# auto_search = 0     # 自动查找path路径下日志文件夹
+# change_name = 1     # 改名合并(已经能自动判断)
+# force_merge = 1     # 强制合并,不判断文件是否存在(需开启改名)
+# log_date_range = 1  # 启用日志范围(暂不支持跨月)
+# log_analy = 0       # 日志分析(需先改名合并)
+# once_analy = 0      # 一次抄表成功率分析(需先改名合并)
+# db_analy = 0        # 数据库分析
+# EOB_analy = 0       # EOB分析()
+# old_version = 0     # True: 1.7.2日志 , False: 1.7.2之后版本日志
+
+# path = os.getcwd()
+log_name = 'all.log'  # 日志合并文件文件名
+profile_name = dir_name+'_'+time_type+'_' + \
+    str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
+srwf_name = dir_name+'_3762.log'   # 3762报文文件名
+
+print('START ANALYSIS:')
+print
+print('--------------------------------')
+
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
-auto_search = 0  #自动查找path路径下日志文件夹
-change_name = 1  #改名合并(已经能自动判断)
-# TODO:强制合并
-force_merge = 1  #强制合并 
-log_date_range = 1  #启用日志范围(暂不支持跨月)
-log_analy = 0    #日志分析(需先改名合并)
-once_analy = 0   #一次抄表成功率分析(需先改名合并)
-db_analy = 0     #数据库分析
-old_version = 0  #1.7.2日志
-path += '\\'+dir_name+'\\'
-# path = os.getcwd()
-log_name = 'all.log'  # 日志合并文件文件名
-profile_name = dir_name+'_'+time_type+'_'+str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
-srwf_name = dir_name+'_3762.log'   # 3762报文文件名
-
-### 第一部分：日志处理
-## 改名
+# 第一部分：日志处理
+# 改名
 filelist = os.listdir(path)
 
 filesum = 0  # message总数
 startnum = 0  # 重命名开始计数
 
 if change_name == True:
-    if os.path.isfile(os.path.join(path,log_name)):
-        print('{0} already exist, escape change name'.format(log_name))
+    if os.path.isfile(os.path.join(path, log_name)):
+        print('\'{0}\' already exist, escape change name.'.format(log_name))
+        if force_merge == False:
+            print('To merge log file again, please enable force_merge.')
         print('--------------------------------')
 
     else:
@@ -80,14 +119,14 @@ if change_name == True:
                     # 判断文件名长度为10
                     if len(i) == 10:
                         messagename = 'messages.0%d' % startnum
-                        os.rename(path+i, path+messagename)
+                        os.rename((os.path.join(path, i),
+                                   os.path.join(path, messagename)))
                         # print(path+i,'-->',path+messagename)
                         if startnum > 9:
                             print("too many 10 length messages")
                             os.exit()
                         else:
                             startnum += 1
-
 
             # 更新列表
             filelist = os.listdir(path)
@@ -101,53 +140,61 @@ if change_name == True:
                 if isMessage:
                     messagename = 'messages.%03d' % filesum
                     # print(path+i,'-->',path+messagename)
-                    os.rename(path+i, path+messagename)
+                    os.rename(os.path.join(path, i),
+                              os.path.join(path, messagename))
                     filesum -= 1
-        print('change name success')
-    
-    ## 合并文件
-    # 新建合并文件，二进制写入，行尾符不会自动识别系统，或者newline='\n'
-    all_log = open(path+log_name, 'wb')
-    # 更新列表
-    filelist = os.listdir(path)
+            print('change name success')
+
     # 合并文件
-    for i in filelist:
-        # 判断是否为日志文件
-        isMessage = re.match(r'messages.{0,2}', i)
-        if isMessage:
-            x = open(path+i, 'rb')
-            all_log.write(x.read())
-            x.close()
-    all_log.close()
-
-    print('merge file success')
-    print('--------------------------------')
-
-## 日志时间范围
-if log_date_range == True:
-    if not os.path.isfile(os.path.join(path,log_name)):
-        print('{0} not exist, please change name first'.format(log_name))
-        print('--------------------------------')
-    else:
-        # 正则表达式
-        pattern_line = r'((.*) DC: .*)'
-        # 转化为对象
-        pattern = re.compile(pattern_line)
-        all_log = open(path+log_name, 'r', encoding='UTF-8')
-        result1 = pattern.findall(all_log.read())
+    if not os.path.isfile(os.path.join(path, log_name)) or force_merge:
+        # 新建合并文件，二进制写入，行尾符不会自动识别系统，或者newline='\n'
+        all_log = open(os.path.join(path, log_name), 'wb')
+        # 更新列表
+        filelist = os.listdir(path)
+        # 合并文件
+        for i in filelist:
+            # 判断是否为日志文件
+            isMessage = re.match(r'messages.{0,2}', i)
+            if isMessage:
+                x = open(os.path.join(path, i), 'rb')
+                all_log.write(x.read())
+                x.close()
         all_log.close()
-        srwf_info = open(path+log_name, 'w', newline='\n', encoding='UTF-8')
-        # 匹配的所有内容输出到文件
-        for i in result1:
-            if i[1] > log_start_time and i[1] < log_end_time:
-                srwf_info.write(i[0])  # 第一个捕获组，最外面的括号
-                srwf_info.write('\n')
 
-        srwf_info.close()
+        print('merge file success')
+        print('--------------------------------')
 
-## 日志分析功能
+# 日志时间范围
+if log_date_range == True:
+    # 判断日期是否合法
+    if log_end_time <= log_start_time:
+        print('illegal parameter, log_end_time({0}) should be greater than log_start_time{1}, please check them.'.format(
+            log_end_time, log_start_time))
+    else:
+        if not os.path.isfile(os.path.join(path, log_name)):
+            print('{0} not exist, please change name first'.format(log_name))
+            print('--------------------------------')
+        else:
+            # 正则表达式
+            pattern_line = r'((.*) DC: .*)'
+            # 转化为对象
+            pattern = re.compile(pattern_line)
+            all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
+            result1 = pattern.findall(all_log.read())
+            all_log.close()
+            srwf_info = open(os.path.join(path, log_name), 'w',
+                             newline='\n', encoding='UTF-8')
+            # 匹配的所有内容输出到文件
+            for i in result1:
+                if i[1] > log_start_time and i[1] < log_end_time:
+                    srwf_info.write(i[0])  # 第一个捕获组，最外面的括号
+                    srwf_info.write('\n')
+
+            srwf_info.close()
+
+# 日志分析功能
 if log_analy == True:
-    if not os.path.isfile(os.path.join(path,log_name)):
+    if not os.path.isfile(os.path.join(path, log_name)):
         print('{0} not exist, please change name first'.format(log_name))
         print('--------------------------------')
     else:
@@ -155,10 +202,11 @@ if log_analy == True:
         pattern_line = r'((.*SRWF -> 3_47,TX.*\n(.*DC: [0-9A-F]*)*\n)|(.*SRWF.*\n(.*DC: [0-9A-F]{0,}\n)*.*unpack3762.*\n))'
         # 转化为对象
         pattern = re.compile(pattern_line)
-        all_log = open(path+log_name, 'r', encoding='UTF-8')
+        all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
         result1 = pattern.findall(all_log.read())
         all_log.close()
-        srwf_info = open(out_dir+srwf_name, 'w', newline='\n', encoding='UTF-8')
+        srwf_info = open(os.path.join(out_dir, srwf_name), 'w',
+                         newline='\n', encoding='UTF-8')
         # 匹配的所有内容输出到文件
         for i in result1:
             srwf_info.write(i[0])  # 第一个捕获组，最外面的括号
@@ -170,23 +218,24 @@ if log_analy == True:
             # 正则替换，删除RX后的一条记录
             def change(value):
                 return value.group(1)+'\n'
-
-
-            srwf_info = open(out_dir+srwf_name, 'r', newline='\n', encoding='UTF-8')
-            result2 = re.sub(r'(.*SRWF -> 3_47,RX).*\n(.*\n)', change, srwf_info.read())
+            srwf_info = open(os.path.join(out_dir, srwf_name), 'r',
+                             newline='\n', encoding='UTF-8')
+            result2 = re.sub(r'(.*SRWF -> 3_47,RX).*\n(.*\n)',
+                             change, srwf_info.read())
             # result2 = srwf_info.read()
             srwf_info.close()
 
-            srwf_info = open(out_dir+srwf_name, 'w', newline='\n', encoding='UTF-8')
+            srwf_info = open(os.path.join(out_dir, srwf_name), 'w',
+                             newline='\n', encoding='UTF-8')
             srwf_info.write(result2)
             srwf_info.close()
 
         print('3762log processing success')
         print('--------------------------------')
 
-## 一次抄表成功率分析
+# 一次抄表成功率分析
 if once_analy == True:
-    if not os.path.isfile(os.path.join(path,log_name)):
+    if not os.path.isfile(os.path.join(path, log_name)):
         print('{0} not exist, please change name first'.format(log_name))
         print('--------------------------------')
     else:
@@ -195,24 +244,25 @@ if once_analy == True:
         pattern_line = r'AFN : 13, FN : 1'
         # 转化为对象
         pattern = re.compile(pattern_line)
-        all_log = open(path+log_name, 'r', encoding='UTF-8')
+        all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
         result1 = pattern.findall(all_log.read())
         current_count = len(result1)
 
         pattern_line = r'03032020010313010000000000|03032020010313010000000002'
         # 转化为对象
         pattern = re.compile(pattern_line)
-        all_log = open(path+log_name, 'r', encoding='UTF-8')
+        all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
         result1 = pattern.findall(all_log.read())
         wrong_count = len(result1)
         print("wrong_count:{0}".format(wrong_count))
         print("total_count:{0}".format(current_count))
-        print("success_rate:{:.2f}%".format((current_count-wrong_count)/current_count*100))
+        print("success_rate:{:.2f}%".format(
+            (current_count-wrong_count)/current_count*100))
         print('--------------------------------')
 
-### 第二部分：数据库处理
+# 第二部分：数据库处理
 if db_analy == True:
-    conn = sqlite3.connect(path+'dc.db')
+    conn = sqlite3.connect(os.path.join(path, 'dc.db'))
     print('open dc.db successfully')
     sql_c = conn.cursor()
     sql_command = '''
@@ -236,7 +286,7 @@ if db_analy == True:
     cursor = sql_c.execute(
         sql_command
     )
-    sql_file = open(out_dir+profile_name, 'w')
+    sql_file = open(os.path.join(out_dir, profile_name), 'w')
     sql_file.write(
         'id,serial_no,AverageDataProfile,EnergyProfile,EOBProfile,LoadProfile\n')
 
@@ -256,15 +306,14 @@ if db_analy == True:
         if row[2] != 0 or row[3] != 0 or row[4] != 0 or row[5] != 0:
             success_count += 1
         sql_file.write(str(row[0])+','+str(row[1])+','+str(row[2]) +
-                    ','+str(row[3])+','+str(row[4])+','+str(row[5])+'\n')
+                       ','+str(row[3])+','+str(row[4])+','+str(row[5])+'\n')
 
     sql_file.write(str(total_id)+','+str(success_count)+','+str(AverageDataProfile_sum)+','+str(EnergyProfile_sum) +
-                ','+str(EOBProfile_sum)+','+str(LoadProfile_sum)+'\n')
+                   ','+str(EOBProfile_sum)+','+str(LoadProfile_sum)+'\n')
     sql_file.close()
     print('export csv successfully')
     print('--------------------------------')
     conn.close()
 
 
-print('all done')
-
+print('ALL DONE')

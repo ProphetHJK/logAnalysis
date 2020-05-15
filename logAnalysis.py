@@ -53,6 +53,7 @@ force_merge = config.getint(
 log_date_range = config.getint('config', 'log_date_range')  # 启用日志范围(暂不支持跨月)
 log_analy = config.getint('config', 'log_analy')        # 日志分析(需先改名合并)
 once_analy = config.getint('config', 'once_analy')      # 一次抄表成功率分析(需先改名合并)
+log_profile = config.getint('config', 'log_profile')      # 一次抄表成功率分析(需先改名合并)
 db_analy = config.getint('config', 'db_analy')        # 数据库分析
 EOB_analy = config.getint('config', 'EOB_analy')       # EOB分析()
 # True: 1.7.2日志 , False: 1.7.2之后版本日志
@@ -88,6 +89,7 @@ profile_name = dir_name+'_'+time_type+'_' + \
     str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
 srwf_name = dir_name+'_3762.log'   # 3762报文文件名
 EOB_name = dir_name+'_EOB_'+str(start_EOB_time)+'_'+str(end_EOB_time)+'.csv'
+profile_log_name =  dir_name+'_saveProfile_'   # saveProfile日志导出文件名
 
 print('START ANALYSIS:')
 print
@@ -267,6 +269,33 @@ if once_analy == True:
         print("success_rate:{:.2f}%".format(
             (current_count-wrong_count)/current_count*100))
         print('--------------------------------')
+
+# 分析saveProfile
+if log_profile == True:
+    # 正则表达式
+    pattern_line = r'(.*saveProfile,taskType:([0-9]*).*)'
+    # 转化为对象
+    pattern = re.compile(pattern_line)
+    all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
+    result1 = pattern.findall(all_log.read())
+    all_log.close()
+    profileId_list = []
+
+    # 将所有profile id导入到list中
+    for i in result1:
+        profileId_list.append(i[1])
+    # 去重
+    profileId_list = list(set(profileId_list))
+    # 将日志分别写到对应文件中
+    for i in profileId_list:
+        print('profile_id:'+i)
+        temp_profile_file = open(os.path.join(out_dir, profile_log_name+i+'.log'), 'w',
+                        newline='\n', encoding='UTF-8')
+        for j in result1:
+            if j[1] == i: 
+                temp_profile_file.write(j[0])  # 第一个捕获组，最外面的括号
+                temp_profile_file.write('\n')
+        temp_profile_file.close()
 
 # 第二部分：数据库处理
 if db_analy == True:

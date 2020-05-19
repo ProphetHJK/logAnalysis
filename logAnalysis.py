@@ -18,11 +18,13 @@ def timestamp_datetime(value):
     dt = time.strftime(format, value)
     return dt
 
-
+# 读入config.ini文件
 config = configparser.ConfigParser()
 os.chdir(sys.path[0])
 config_file = os.path.abspath(os.path.join(os.getcwd(), 'config.ini'))
 config.read(config_file, encoding='UTF-8')
+
+
 
 start_time = datetime_timestamp(
     config['db']['start_time'])      # 数据库分析开始时间，运行程序的当地时间
@@ -58,6 +60,7 @@ db_analy = config.getint('config', 'db_analy')        # 数据库分析
 EOB_analy = config.getint('config', 'EOB_analy')       # EOB分析()
 # True: 1.7.2日志 , False: 1.7.2之后版本日志
 old_version = config.getint('config', 'old_version')
+print_type = config.getint('config', 'print_type')
 
 # start_time = datetime_timestamp('2020-05-13 05:00:00')      # 数据库分析开始时间，运行程序的当地时间
 # end_time = datetime_timestamp('2020-05-14 05:00:00')        # 数据库分析结束时间，运行程序的当地时间
@@ -90,13 +93,21 @@ profile_name = dir_name+'_'+time_type+'_' + \
 srwf_name = dir_name+'_3762.log'   # 3762报文文件名
 EOB_name = dir_name+'_EOB_'+str(start_EOB_time)+'_'+str(end_EOB_time)+'.csv'
 profile_log_name =  dir_name+'_saveProfile_'   # saveProfile日志导出文件名
+print_log_name = dir_name+'_logout.log'
 
-print('START ANALYSIS:')
-print
-print('--------------------------------')
 
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
+
+
+
+if print_type != 0:
+    print_type_temp = sys.stdout
+    print_log = open(os.path.join(out_dir,print_log_name),'w')
+    sys.stdout = print_log
+
+print('START ANALYSIS: '+path)
+print('--------------------------------')
 
 # 第一部分：日志处理
 # 改名
@@ -140,7 +151,7 @@ if change_name == True:
 
             # 更新列表
             filelist = os.listdir(path)
-            print('file count is ', filesum)
+            print('file count is '+ filesum)
             filesum -= 1
 
             # 倒序改名
@@ -280,23 +291,31 @@ if log_profile == True:
     result1 = pattern.findall(all_log.read())
     all_log.close()
     profileId_list = []
-
-    # 将所有profile id导入到list中
-    for i in result1:
-        profileId_list.append(i[1])
-    # 去重
-    profileId_list = list(set(profileId_list))
-    # 将日志分别写到对应文件中
-    for i in profileId_list:
-        print('profile_id:'+i)
-        temp_profile_file = open(os.path.join(out_dir, profile_log_name+i+'.log'), 'w',
-                        newline='\n', encoding='UTF-8')
-        for j in result1:
-            if j[1] == i: 
-                temp_profile_file.write(j[0])  # 第一个捕获组，最外面的括号
-                temp_profile_file.write('\n')
-        temp_profile_file.close()
-
+    if len(result1) != 0:
+        # 将所有profile id导入到list中
+        for i in result1:
+            profileId_list.append(i[1])
+        # 去重
+        profileId_list = list(set(profileId_list))
+        # 将日志分别写到对应文件中
+        for i in profileId_list:
+            print('profile_id: '+i,end='')
+            # save_profile的数量
+            saveprofile_sum = 0
+            temp_profile_file = open(os.path.join(out_dir, profile_log_name+i+'.log'), 'w',
+                            newline='\n', encoding='UTF-8')
+            for j in result1:
+                if j[1] == i: 
+                    temp_profile_file.write(j[0])  # 第一个捕获组，最外面的括号
+                    temp_profile_file.write('\n')
+                    saveprofile_sum += 1
+            temp_profile_file.close()
+            # os.rename(os.path.join(out_dir, profile_log_name+i+'.log'),os.path.join(out_dir, profile_log_name+i+'_'+str(saveprofile_sum)+'.log'))
+            print(', sum: '+str(saveprofile_sum))
+            saveprofile_sum = 0
+    else:
+        print('no saveProfile in this log')
+    print('--------------------------------')
 # 第二部分：数据库处理
 if db_analy == True:
     conn = sqlite3.connect(os.path.join(path, 'dc.db'))
@@ -392,3 +411,11 @@ if db_analy == True:
     conn.close()
 
 print('ALL DONE')
+print('--------------------------------')
+
+if print_type != 0:
+    sys.stdout = print_type_temp
+    print_log.close()
+    print_log = open(os.path.join(out_dir,print_log_name),'r')
+    print(print_log.read())
+    print_log.close()

@@ -147,8 +147,8 @@ for sub_dir in pathlist:
                             # 判断文件名长度为10
                             if len(i) == 10:
                                 messagename = 'messages.0%d' % startnum
-                                os.rename((os.path.join(path, i),
-                                        os.path.join(path, messagename)))
+                                os.rename(os.path.join(path, i),
+                                        os.path.join(path, messagename))
                                 # print(path+i,'-->',path+messagename)
                                 if startnum > 9:
                                     print("too many 10 length messages")

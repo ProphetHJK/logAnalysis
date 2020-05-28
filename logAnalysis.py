@@ -56,7 +56,8 @@ log_analy = config.getint('config', 'log_analy')        # 日志分析(需先改
 once_analy = config.getint('config', 'once_analy')      # 一次抄表成功率分析(需先改名合并)
 log_profile = config.getint('config', 'log_profile')      # 一次抄表成功率分析(需先改名合并)
 db_analy = config.getint('config', 'db_analy')        # 数据库分析
-EOB_analy = config.getint('config', 'EOB_analy')       # EOB分析()
+EOB_analy = config.getint('config', 'EOB_analy')       # EOB分析
+load_analy = config.getint('config', 'load_analy')       # loadprofile分析
 # True: 1.7.2日志 , False: 1.7.2之后版本日志
 old_version = config.getint('config', 'old_version')
 print_type = config.getint('config', 'print_type')
@@ -102,6 +103,7 @@ for sub_dir in pathlist:
             str(start_time)+'-'+str(end_time)+'.csv'  # 数据库导出文件名
         srwf_name = dir_name+'_3762.log'   # 3762报文文件名
         EOB_name = dir_name+'_EOB_'+str(start_EOB_time)+'_'+str(end_EOB_time)+'.csv'
+        load_name = dir_name+'_loadprofile_'+str(start_EOB_time)+'_'+str(end_EOB_time)+'.csv'
         profile_log_name =  dir_name+'_saveProfile_'   # saveProfile日志导出文件名
         print_log_name = dir_name+'_logout.log'
 
@@ -378,7 +380,7 @@ for sub_dir in pathlist:
             print('--------------------------------')
             conn.close()
         # EOB 分析
-        if db_analy == True:
+        if EOB_analy == True:
             conn = sqlite3.connect(os.path.join(path, 'dc.db'))
             print('open dc.db successfully')
             sql_c = conn.cursor()
@@ -414,6 +416,45 @@ for sub_dir in pathlist:
 
             sql_file.close()
             print('export EOB csv successfully')
+            print('--------------------------------')
+            conn.close()
+        # loadprofile分析
+        if load_analy == True:
+            conn = sqlite3.connect(os.path.join(path, 'dc.db'))
+            print('open dc.db successfully')
+            sql_c = conn.cursor()
+            sql_command = '''
+                SELECT
+                    meter.id,
+                    serial_no,
+                    data_time,
+                    save_time 
+                FROM
+                    meter,
+                    data_LoadProfile_sd 
+                WHERE
+                    data_LoadProfile_sd.meter_id = meter.id 
+                    AND save_time > {0} 
+                    AND save_time < {1} 
+                ORDER BY
+                    save_time;
+            '''.format(start_EOB_time, end_EOB_time)  # 格式化sql语句
+            # print(sql_command)
+            cursor = sql_c.execute(sql_command)
+            sql_file = open(os.path.join(out_dir, load_name), 'w')
+            sql_file.write(
+                'id,serial_no,data_time,save_time\n')
+
+            total_id = 0  # 表的总数量
+
+            for row in cursor:
+                total_id += 1
+
+                sql_file.write(str(row[0])+','+str(row[1])+','+timestamp_datetime(row[2]) +
+                            ','+timestamp_datetime(row[3])+'\n')
+
+            sql_file.close()
+            print('export load profile csv successfully')
             print('--------------------------------')
             conn.close()
 

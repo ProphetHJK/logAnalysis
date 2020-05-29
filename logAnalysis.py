@@ -33,6 +33,10 @@ start_EOB_time = datetime_timestamp(
     config['db']['start_EOB_time'])  # 数据库分析开始时间，运行程序的当地时间
 end_EOB_time = datetime_timestamp(
     config['db']['end_EOB_time'])    # 数据库分析开始时间，运行程序的当地时间
+start_load_time = datetime_timestamp(
+    config['db']['start_load_time'])  # 数据库分析开始时间，运行程序的当地时间
+end_load_time = datetime_timestamp(
+    config['db']['end_load_time'])    # 数据库分析开始时间，运行程序的当地时间
 # 日志开始分析时间
 log_start_time = config['log']['log_start_time']
 # 日志结束分析时间
@@ -438,7 +442,7 @@ for sub_dir in pathlist:
                     AND save_time < {1} 
                 ORDER BY
                     save_time;
-            '''.format(start_EOB_time, end_EOB_time)  # 格式化sql语句
+            '''.format(start_load_time, end_load_time)  # 格式化sql语句
             # print(sql_command)
             cursor = sql_c.execute(sql_command)
             sql_file = open(os.path.join(out_dir, load_name), 'w')

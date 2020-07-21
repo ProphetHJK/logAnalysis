@@ -213,7 +213,7 @@ for sub_dir in pathlist:
                     pattern_line = r'((.*) DC: .*)'
                     # 转化为对象
                     pattern = re.compile(pattern_line)
-                    all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
+                    all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8', errors='ignore')
                     result1 = pattern.findall(all_log.read())
                     all_log.close()
                     srwf_info = open(os.path.join(path, log_name), 'w',
@@ -236,7 +236,7 @@ for sub_dir in pathlist:
                 pattern_line = r'((.*SRWF -> 3_47,TX.*\n(.*DC: [0-9A-F]*)*\n)|(.*SRWF.*\n(.*DC: [0-9A-F]{0,}\n)*.*unpack3762.*\n))'
                 # 转化为对象
                 pattern = re.compile(pattern_line)
-                all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
+                all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8', errors='ignore')
                 result1 = pattern.findall(all_log.read())
                 all_log.close()
                 srwf_info = open(os.path.join(out_dir, srwf_name), 'w',
@@ -278,14 +278,14 @@ for sub_dir in pathlist:
                 pattern_line = r'AFN : 13, FN : 1'
                 # 转化为对象
                 pattern = re.compile(pattern_line)
-                srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8')
+                srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8', errors='ignore')
                 result1 = pattern.findall(srwf_info.read())
                 current_count = len(result1)
 
                 pattern_line = r'13010000000000|13010000000002'
                 # 转化为对象
                 pattern = re.compile(pattern_line)
-                srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8')
+                srwf_info = open(os.path.join(out_dir, srwf_name), 'r', encoding='UTF-8', errors='ignore')
                 result1 = pattern.findall(srwf_info.read())
                 wrong_count = len(result1)
                 print("wrong_count:{0}".format(wrong_count))
@@ -300,7 +300,7 @@ for sub_dir in pathlist:
             pattern_line = r'(.*saveProfile,taskType:([0-9]*).*)'
             # 转化为对象
             pattern = re.compile(pattern_line)
-            all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8')
+            all_log = open(os.path.join(path, log_name), 'r', encoding='UTF-8', errors='ignore')
             result1 = pattern.findall(all_log.read())
             all_log.close()
             profileId_list = []
